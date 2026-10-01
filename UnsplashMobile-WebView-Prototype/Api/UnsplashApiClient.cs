@@ -74,10 +74,11 @@ namespace UnsplashMobile.Api
             return !string.IsNullOrWhiteSpace(AccessToken);
         }
 
-        public async Task<ObservableCollection<UnsplashPhoto>> SearchPhotosAsync(string query)
+        public async Task<ObservableCollection<UnsplashPhoto>> SearchPhotosAsync(string query, int page = 1)
         {
             var actualQuery = string.IsNullOrWhiteSpace(query) ? "travel" : query.Trim();
-            var uri = new Uri($"https://api.unsplash.com/search/photos?query={Uri.EscapeDataString(actualQuery)}&per_page=10&order_by=popular");
+            var requestedPage = Math.Max(1, page);
+            var uri = new Uri($"https://api.unsplash.com/search/photos?query={Uri.EscapeDataString(actualQuery)}&page={requestedPage}&per_page=10&order_by=popular");
 
             using (var request = new HttpRequestMessage(HttpMethod.Get, uri))
             {
