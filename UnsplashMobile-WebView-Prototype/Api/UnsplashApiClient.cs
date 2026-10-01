@@ -92,17 +92,32 @@ namespace UnsplashMobile.Api
                     throw new HttpRequestException("Unsplash query failed: " + body);
                 }
 
-                var root = JsonValue.Parse(body).GetObject();
-                var results = root.GetNamedArray("results");
+                JsonObject root;
+                try
+                {
+                    root = JsonValue.Parse(body).GetObject();
+                }
+                catch (Exception ex)
+                {
+                    throw new HttpRequestException("Unsplash returned invalid JSON (HTTP " + (int)response.StatusCode + "): " + body, ex);
+                }
+
+                if (!root.ContainsKey("results") || root["results"].ValueType != JsonValueType.Array)
+                {
+                    var detail = root.ContainsKey("errors") ? root["errors"].ToString() : body;
+                    throw new HttpRequestException("Unsplash response did not include photo results (HTTP " + (int)response.StatusCode + "): " + detail);
+                }
+
+                var results = root["results"].GetArray();
                 var photos = new ObservableCollection<UnsplashPhoto>();
 
                 foreach (var item in results)
                 {
                     var photoObject = item.GetObject();
-                    var urls = photoObject.GetNamedObject("urls");
-                    var user = photoObject.GetNamedObject("user");
-                    var links = photoObject.GetNamedObject("links");
-                    var userLinks = user.GetNamedObject("links");
+                    var urls = GetObjectOrEmpty(photoObject, "urls");
+                    var user = GetObjectOrEmpty(photoObject, "user");
+                    var links = GetObjectOrEmpty(photoObject, "links");
+                    var userLinks = GetObjectOrEmpty(user, "links");
                     var smallUrl = urls.GetNamedString("small", string.Empty);
                     var regularUrl = urls.GetNamedString("regular", smallUrl);
                     var fullUrl = urls.GetNamedString("full", regularUrl);
@@ -110,12 +125,20 @@ namespace UnsplashMobile.Api
                     var description = photoObject.GetNamedString("description", string.Empty);
                     var tags = new List<string>();
 
-                    foreach (var tag in photoObject.GetNamedArray("tags"))
+                    if (photoObject.ContainsKey("tags") && photoObject["tags"].ValueType == JsonValueType.Array)
                     {
-                        var tagTitle = tag.GetObject().GetNamedString("title", string.Empty);
-                        if (!string.IsNullOrWhiteSpace(tagTitle))
+                        foreach (var tag in photoObject["tags"].GetArray())
                         {
-                            tags.Add(tagTitle);
+                            if (tag.ValueType != JsonValueType.Object)
+                            {
+                                continue;
+                            }
+
+                            var tagTitle = tag.GetObject().GetNamedString("title", string.Empty);
+                            if (!string.IsNullOrWhiteSpace(tagTitle))
+                            {
+                                tags.Add(tagTitle);
+                            }
                         }
                     }
 
@@ -146,6 +169,13 @@ namespace UnsplashMobile.Api
 
                 return photos;
             }
+        }
+
+        private static JsonObject GetObjectOrEmpty(JsonObject parent, string name)
+        {
+            return parent.ContainsKey(name) && parent[name].ValueType == JsonValueType.Object
+                ? parent[name].GetObject()
+                : new JsonObject();
         }
 
         public Task<byte[]> DownloadImageAsync(string imageUrl)
