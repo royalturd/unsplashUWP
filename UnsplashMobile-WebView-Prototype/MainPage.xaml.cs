@@ -11,6 +11,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Animation;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace UnsplashMobile
 {
@@ -79,6 +80,69 @@ namespace UnsplashMobile
             storyboard.Children.Add(rotation);
             storyboard.Children.Add(fade);
             storyboard.Begin();
+        }
+
+        private async void PhotoImage_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            var photo = (sender as FrameworkElement)?.DataContext as UnsplashPhoto;
+            if (photo == null)
+            {
+                return;
+            }
+
+            var details = new StackPanel();
+            if (Uri.TryCreate(photo.RegularImageUrl, UriKind.Absolute, out var imageUri))
+            {
+                details.Children.Add(new Image
+                {
+                    Source = new BitmapImage(imageUri),
+                    Height = 220,
+                    Stretch = Stretch.UniformToFill,
+                    Margin = new Thickness(0, 0, 0, 12)
+                });
+            }
+
+            AddPhotoDetail(details, "Description", string.IsNullOrWhiteSpace(photo.Description) ? "No long description provided." : photo.Description);
+            AddPhotoDetail(details, "Alt description", string.IsNullOrWhiteSpace(photo.AltDescription) ? "No alt description provided." : photo.AltDescription);
+            AddPhotoDetail(details, "Photographer", photo.User);
+            AddPhotoDetail(details, "Username", string.IsNullOrWhiteSpace(photo.UserName) ? "Not provided" : "@" + photo.UserName);
+            AddPhotoDetail(details, "Dimensions", photo.Width + " x " + photo.Height);
+            AddPhotoDetail(details, "Likes", photo.Likes.ToString());
+            AddPhotoDetail(details, "Created", photo.CreatedAt);
+            AddPhotoDetail(details, "Tags", string.IsNullOrWhiteSpace(photo.Tags) ? "No tags" : photo.Tags);
+            AddPhotoDetail(details, "Color", photo.Color);
+            AddPhotoDetail(details, "Photographer profile", photo.UserProfileUrl);
+            AddPhotoDetail(details, "Unsplash photo page", photo.PhotoPageUrl);
+
+            var dialog = new ContentDialog
+            {
+                Title = photo.Title,
+                Content = new ScrollViewer { Content = details, MaxHeight = 520 },
+                CloseButtonText = "Close"
+            };
+
+            await dialog.ShowAsync();
+        }
+
+        private static void AddPhotoDetail(Panel panel, string label, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = label,
+                FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                Margin = new Thickness(0, 5, 0, 1)
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = value,
+                TextWrapping = TextWrapping.WrapWholeWords,
+                IsTextSelectionEnabled = true
+            });
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)

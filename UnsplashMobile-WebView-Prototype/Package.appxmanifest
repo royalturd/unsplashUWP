@@ -2,7 +2,7 @@
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" IgnorableNamespaces="uap mp">
   <Identity Name="UnsplashMobile" Publisher="CN=UnsplashMobile" Version="1.0.0.0" />
   <Properties>
-    <DisplayName>Unsplash Mobile</DisplayName>
+    <DisplayName>UnsplashUWP</DisplayName>
     <PublisherDisplayName>Royalturd</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -14,7 +14,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="UnsplashMobile.App">
-      <uap:VisualElements DisplayName="Unsplash Mobile" Description="Unsplash API client with OAuth login" BackgroundColor="#171717" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
+      <uap:VisualElements DisplayName="UnsplashUWP" Description="Unsplash API client with OAuth login" BackgroundColor="#171717" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>

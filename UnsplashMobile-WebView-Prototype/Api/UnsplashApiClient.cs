@@ -12,13 +12,24 @@ namespace UnsplashMobile.Api
     {
         public string Id { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
+        public string AltDescription { get; set; }
         public string User { get; set; }
+        public string UserName { get; set; }
+        public string UserProfileUrl { get; set; }
         public string ImageUrl { get; set; }
         public string SmallImageUrl { get; set; }
         public string RegularImageUrl { get; set; }
         public string FullImageUrl { get; set; }
         public string RawImageUrl { get; set; }
         public string DownloadLocation { get; set; }
+        public string PhotoPageUrl { get; set; }
+        public string CreatedAt { get; set; }
+        public string Color { get; set; }
+        public string Tags { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public int Likes { get; set; }
     }
 
     public sealed class UnsplashApiClient
@@ -91,21 +102,45 @@ namespace UnsplashMobile.Api
                     var urls = photoObject.GetNamedObject("urls");
                     var user = photoObject.GetNamedObject("user");
                     var links = photoObject.GetNamedObject("links");
+                    var userLinks = user.GetNamedObject("links");
                     var smallUrl = urls.GetNamedString("small", string.Empty);
                     var regularUrl = urls.GetNamedString("regular", smallUrl);
                     var fullUrl = urls.GetNamedString("full", regularUrl);
+                    var altDescription = photoObject.GetNamedString("alt_description", string.Empty);
+                    var description = photoObject.GetNamedString("description", string.Empty);
+                    var tags = new List<string>();
+
+                    foreach (var tag in photoObject.GetNamedArray("tags"))
+                    {
+                        var tagTitle = tag.GetObject().GetNamedString("title", string.Empty);
+                        if (!string.IsNullOrWhiteSpace(tagTitle))
+                        {
+                            tags.Add(tagTitle);
+                        }
+                    }
 
                     photos.Add(new UnsplashPhoto
                     {
                         Id = photoObject.GetNamedString("id", string.Empty),
-                        Title = photoObject.GetNamedString("alt_description", "Unsplash photo"),
+                        Title = string.IsNullOrWhiteSpace(altDescription) ? "Unsplash photo" : altDescription,
+                        Description = description,
+                        AltDescription = altDescription,
                         User = user.GetNamedString("name", "Unsplash"),
+                        UserName = user.GetNamedString("username", string.Empty),
+                        UserProfileUrl = userLinks.GetNamedString("html", string.Empty),
                         ImageUrl = smallUrl,
                         SmallImageUrl = smallUrl,
                         RegularImageUrl = regularUrl,
                         FullImageUrl = fullUrl,
                         RawImageUrl = urls.GetNamedString("raw", fullUrl),
-                        DownloadLocation = links.GetNamedString("download_location", string.Empty)
+                        DownloadLocation = links.GetNamedString("download_location", string.Empty),
+                        PhotoPageUrl = links.GetNamedString("html", string.Empty),
+                        CreatedAt = photoObject.GetNamedString("created_at", string.Empty),
+                        Color = photoObject.GetNamedString("color", string.Empty),
+                        Tags = string.Join(", ", tags),
+                        Width = (int)photoObject.GetNamedNumber("width", 0),
+                        Height = (int)photoObject.GetNamedNumber("height", 0),
+                        Likes = (int)photoObject.GetNamedNumber("likes", 0)
                     });
                 }
 

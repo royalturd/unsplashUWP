@@ -1,4 +1,4 @@
-# Unsplash Mobile
+# UnsplashUWP
 
 A native UWP Unsplash client for Windows 10 Mobile, created by Royalturd. The app searches Unsplash photos and supports OAuth login without embedding a browser engine or depending on Gecko.
 
