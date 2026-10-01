@@ -1,80 +1,72 @@
 # UnsplashUWP
 
-A native UWP Unsplash client for Windows 10 Mobile, created by Royalturd. The app searches Unsplash photos and supports OAuth login without embedding a browser engine or depending on Gecko.
+UnsplashUWP is a native Universal Windows Platform client for Windows 10 Mobile, developed for Lumia by Royalturd. It searches Unsplash directly through its API and OAuth flow; it does not embed a browser engine or depend on Gecko.
 
 ## Features
 
-- Search and view Unsplash photos.
-- Load additional search results in pages.
-- Download small, regular, full-resolution, or original photo images to a location you choose.
-- Open a photo's full description, photographer, dimensions, tags, and source links by tapping its image.
-- Browse Discover, Recent, and Saved as separate swipeable sections.
-- Keep recently viewed and saved photos on the device between launches.
-- Enter an Unsplash Access Key, Secret Key, and redirect URI in the app.
-- Save, test, or clear credentials on the device.
-- Toggle dark theme in Settings; the choice is remembered on the device.
-- Sign in through the system web authentication flow.
+- Search Unsplash and load additional results with **Load more**.
+- Tap a photo to view its descriptions, photographer, dimensions, tags, likes, and source links.
+- Save photos and review recently viewed photos in separate swipeable sections. Both collections persist on the device.
+- Download a photo as a small, regular, full-resolution, or original image, then choose where to save it.
+- Sign in with Unsplash OAuth and enter, test, save, or clear API credentials in the app.
+- Toggle the AMOLED-black dark theme in Settings; the selection is remembered.
+- View the **UnsplashUWP Beta** label and Lumia developer credit in Settings.
 
 ## Requirements
 
 - Visual Studio 2022 with the Universal Windows Platform development workload.
-- Windows 10 SDK 10.0.19041.0 (the project build SDK).
-- An Unsplash developer application with its OAuth redirect URI configured.
-- A Windows 10 Mobile device running build 15063 or newer for deployment.
+- Windows 10 SDK 10.0.19041.0 for building this project.
+- An Unsplash developer application with a registered OAuth redirect URI.
+- A Windows 10 Mobile ARM device running build 15063 or later for deployment.
 
-The package declares `10.0.15063.0` as its minimum OS version. The project compiles against the 19041 SDK; that does not raise the package minimum. The 15063 SDK reference assemblies are not included in this repository.
+The package minimum OS version is `10.0.15063.0`. The project builds with SDK `10.0.19041.0`; the build SDK version does not raise the package minimum. The 15063 SDK reference assemblies are not included in this repository.
 
 ## Configure And Use
 
 1. Open `UnsplashMobile-WebView-Prototype/UnsplashMobile.csproj` in Visual Studio.
-2. Launch the app on an ARM device or emulator.
-3. Enter the Unsplash Access Key, Secret Key, and registered redirect URI, then select **Save**.
-4. Use the **Dark theme** switch to change and save the app appearance.
-5. Select **Test** to check API access, **Sign in** for OAuth, or enter a search term and select **Search**.
-6. Swipe between **Discover**, **Recent**, **Saved**, and **Settings**.
-7. Tap a photo image for its full details. Use **Save** to add it to Saved, or **Download** to choose an image size and save location.
+2. Deploy to an ARM device or emulator.
+3. In **Settings**, enter the Unsplash Access Key, Secret Key, and registered Redirect URI, then select **Save keys**.
+4. Use **Test API** to verify access or **Sign in** to authorize through OAuth.
+5. In **Discover**, enter a query and select **Search**. Select **Load more photos** to fetch the next page.
+6. Swipe between **Discover**, **Recent**, **Saved**, and **Settings**. Tap a photo image for its details; use **Save** or **Download** on a photo card as needed.
 
-Credentials are saved in the app's local settings on the device. Do not share a package containing real credentials or commit API keys.
+Credentials and photo collections are stored in the app's local data on the device. Do not commit API credentials or share builds containing real credentials.
 
-## Build An ARM Install Package
+## Build An ARM Package
 
-From PowerShell at the repository root, build a sideload package to `D:\UnsplashMobileBuild`:
+From PowerShell at the repository root, build a sideload package into `D:\UnsplashMobileBuild`:
 
 ```powershell
 $msbuild = 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe'
 & $msbuild '.\UnsplashMobile-WebView-Prototype\UnsplashMobile.csproj' `
-	/restore `
-	/p:Configuration=Debug `
-	/p:Platform=ARM `
-	/p:TargetPlatformVersion=10.0.19041.0 `
-	/p:AppxPackageDir='D:\UnsplashMobileBuild\' `
-	/p:AppxPackage=true `
-	/p:AppxBundle=Never `
-	/p:UapAppxPackageBuildMode=SideloadOnly
+  /restore `
+  /p:Configuration=Debug `
+  /p:Platform=ARM `
+  /p:TargetPlatformVersion=10.0.19041.0 `
+  /p:AppxPackageDir='D:\UnsplashMobileBuild\' `
+  /p:AppxPackage=true `
+  /p:AppxBundle=Never `
+  /p:UapAppxPackageBuildMode=SideloadOnly
 ```
 
-The `.appx` is created under `D:\UnsplashMobileBuild\UnsplashMobile_1.0.0.0_ARM_Debug_Test`. MSBuild also creates intermediate executable files while packaging; the installable deliverable is the ARM `.appx`.
+The installable package is created under `D:\UnsplashMobileBuild\UnsplashMobile_1.0.0.0_ARM_Debug_Test`. MSBuild also creates an executable as an intermediate packaging input; the device deliverable is the ARM `.appx`. The output folder contains ARM dependencies and Visual Studio sideload scripts.
 
 ## Sign And Install
 
-Sideload packages must be signed by a certificate trusted by the device. For local testing, create a development certificate whose subject matches the manifest publisher (`CN=UnsplashMobile`), export its public `.cer`, and sign the generated `.appx` with the Windows SDK `SignTool`. Keep the private signing key out of source control. Install/trust the public certificate on the phone before deploying the package. The package output includes ARM dependencies and Visual Studio sideload scripts.
-
-For a local test build, run the following after building. Reuse the same certificate for later builds so the phone only needs to trust it once:
+Sideloading requires a package certificate trusted by the device. For local testing, create a development certificate whose subject matches the manifest publisher (`CN=UnsplashMobile`), export its public `.cer`, and sign the `.appx` with the Windows SDK SignTool. Keep the private key out of source control. Reuse the same certificate for subsequent builds.
 
 ```powershell
 $folder = 'D:\UnsplashMobileBuild\UnsplashMobile_1.0.0.0_ARM_Debug_Test'
 $appx = Join-Path $folder 'UnsplashMobile_1.0.0.0_ARM_Debug.appx'
 $cert = New-SelfSignedCertificate -Type Custom -Subject 'CN=UnsplashMobile' `
-	-FriendlyName 'UnsplashMobile local sideload' `
-	-KeyUsage DigitalSignature `
-	-CertStoreLocation 'Cert:\CurrentUser\My' `
-	-TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+  -FriendlyName 'UnsplashMobile local sideload' `
+  -KeyUsage DigitalSignature `
+  -CertStoreLocation 'Cert:\CurrentUser\My' `
+  -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
 Export-Certificate -Cert $cert -FilePath (Join-Path $folder 'UnsplashMobile_Dev.cer')
 $signTool = 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe'
 & $signTool sign /fd SHA256 /sha1 $cert.Thumbprint /s My $appx
 & $signTool verify /pa /all $appx
 ```
 
-Copy `UnsplashMobile_Dev.cer` to the phone and trust/install it before deploying the `.appx` with Visual Studio device deployment or Windows Device Portal. Keep the certificate's private key in the local certificate store; do not export or commit it.
-
-The repository does not contain a production signing certificate. A locally signed package is for development and sideloading only.
+Trust/install `UnsplashMobile_Dev.cer` on the device before deploying the `.appx` with Visual Studio device deployment or Windows Device Portal. The repository does not contain a production signing certificate; locally signed packages are for development and sideloading only.
