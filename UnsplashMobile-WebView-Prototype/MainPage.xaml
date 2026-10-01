@@ -3,102 +3,112 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Background="{ThemeResource AppBackgroundBrush}">
+    <Page.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="PhotoCardTemplate">
+                <Border Background="{ThemeResource SurfaceBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" Padding="8" Margin="0,0,0,8" CornerRadius="4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="92" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Image Source="{Binding ImageUrl}" Width="92" Height="104" Stretch="UniformToFill" IsTapEnabled="True" Tapped="PhotoImage_Tapped" />
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource PrimaryTextBrush}" TextWrapping="WrapWholeWords" />
+                            <TextBlock Text="{Binding User}" Foreground="{ThemeResource SecondaryTextBrush}" Margin="0,4,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                <Button Content="Save" Click="SavePhoto_Click" Margin="0,0,6,0" />
+                                <Button Content="Download" Click="DownloadButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+            <DataTemplate x:Key="SavedPhotoCardTemplate">
+                <Border Background="{ThemeResource SurfaceBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" Padding="8" Margin="0,0,0,8" CornerRadius="4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="92" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Image Source="{Binding ImageUrl}" Width="92" Height="104" Stretch="UniformToFill" IsTapEnabled="True" Tapped="PhotoImage_Tapped" />
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource PrimaryTextBrush}" TextWrapping="WrapWholeWords" />
+                            <TextBlock Text="{Binding User}" Foreground="{ThemeResource SecondaryTextBrush}" Margin="0,4,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                <Button Content="Remove" Click="RemoveSavedPhoto_Click" Margin="0,0,6,0" />
+                                <Button Content="Download" Click="DownloadButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid x:Name="PageRoot" Padding="12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <Border Background="{ThemeResource HeaderBrush}" Padding="14" CornerRadius="4">
             <StackPanel>
-            <TextBlock Text="ROYALTURD  /  UNSPLASH" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource AccentBrush}" />
+                <TextBlock Text="ROYALTURD  /  UNSPLASH" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource AccentBrush}" />
                 <TextBlock Text="UnsplashUWP" FontSize="30" FontWeight="SemiBold" Foreground="White" />
-            <TextBlock x:Name="StatusText" Text="Ready to connect" Foreground="{ThemeResource HeaderStatusBrush}" FontSize="12" Margin="0,3,0,0" />
+                <TextBlock x:Name="StatusText" Text="Ready to connect" Foreground="{ThemeResource HeaderStatusBrush}" FontSize="12" Margin="0,3,0,0" />
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" Margin="0,14,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <TextBlock Text="SETTINGS AND API CREDENTIALS" FontSize="12" FontWeight="Bold" Foreground="{ThemeResource PrimaryTextBrush}" Margin="0,0,0,7" />
-            <TextBlock Grid.Row="1" Text="Access key" FontSize="12" Foreground="{ThemeResource LabelTextBrush}" Margin="0,0,0,3" />
-            <TextBox x:Name="ClientIdBox" Grid.Row="2" PlaceholderText="Paste your Unsplash access key" />
-
-            <TextBlock Grid.Row="3" Text="Secret key" FontSize="12" Foreground="{ThemeResource LabelTextBrush}" Margin="0,9,0,3" />
-            <PasswordBox x:Name="ClientSecretBox" Grid.Row="4" PlaceholderText="Paste your Unsplash secret" />
-
-            <TextBlock Grid.Row="5" Text="Redirect URI" FontSize="12" Foreground="{ThemeResource LabelTextBrush}" Margin="0,9,0,3" />
-        </Grid>
-
-        <Grid Grid.Row="2" Margin="0,0,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox x:Name="RedirectUriBox" Grid.ColumnSpan="4" PlaceholderText="https://localhost/unsplash" VerticalAlignment="Center" />
-        </Grid>
-
-        <ToggleSwitch x:Name="DarkThemeToggle" Grid.Row="3" Header="Dark theme" HorizontalAlignment="Left" Margin="0,8,0,0" />
-
-        <Grid Grid.Row="4" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Button x:Name="SaveButton" Content="Save keys" Margin="0,0,4,0" />
-            <Button x:Name="TestButton" Grid.Column="1" Content="Test API" Margin="4,0" />
-            <Button x:Name="ClearButton" Grid.Column="2" Content="Clear" Margin="4,0,0,0" />
-        </Grid>
-
-        <Grid Grid.Row="5" Margin="0,12,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <TextBox x:Name="SearchBox" PlaceholderText="Search photos" VerticalAlignment="Center" />
-            <Grid Grid.Row="1" Margin="0,6,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Button x:Name="LoginButton" Content="Sign in" Margin="0,0,4,0" />
-                <Button x:Name="SearchButton" Grid.Column="1" Content="Search" Margin="4,0,0,0" />
-            </Grid>
-            <ListView x:Name="PhotoList" Grid.Row="2" Margin="0,10,0,0">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Border Background="{ThemeResource SurfaceBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" Padding="8" Margin="0,0,0,8" CornerRadius="4">
-                        <Grid>
+        <Pivot x:Name="LibraryPivot" Grid.Row="1" Margin="0,6,0,0">
+            <PivotItem Header="Discover">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBox x:Name="SearchBox" PlaceholderText="Search photos" VerticalAlignment="Center" />
+                    <Grid Grid.Row="1" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="LoginButton" Content="Sign in" Margin="0,0,4,0" />
+                        <Button x:Name="SearchButton" Grid.Column="1" Content="Search" Margin="4,0,0,0" />
+                    </Grid>
+                    <ListView x:Name="PhotoList" Grid.Row="2" Margin="0,10,0,0" ItemTemplate="{StaticResource PhotoCardTemplate}" />
+                </Grid>
+            </PivotItem>
+            <PivotItem Header="Recent">
+                <ListView x:Name="RecentPhotoList" Margin="0,8,0,0" ItemTemplate="{StaticResource PhotoCardTemplate}" />
+            </PivotItem>
+            <PivotItem Header="Saved">
+                <ListView x:Name="SavedPhotoList" Margin="0,8,0,0" ItemTemplate="{StaticResource SavedPhotoCardTemplate}" />
+            </PivotItem>
+            <PivotItem Header="Settings">
+                <ScrollViewer>
+                    <StackPanel Padding="0,8,0,16">
+                        <TextBlock Text="API credentials" FontSize="18" FontWeight="SemiBold" Foreground="{ThemeResource PrimaryTextBrush}" Margin="0,0,0,10" />
+                        <TextBlock Text="Access key" Foreground="{ThemeResource LabelTextBrush}" Margin="0,0,0,3" />
+                        <TextBox x:Name="ClientIdBox" PlaceholderText="Paste your Unsplash access key" />
+                        <TextBlock Text="Secret key" Foreground="{ThemeResource LabelTextBrush}" Margin="0,10,0,3" />
+                        <PasswordBox x:Name="ClientSecretBox" PlaceholderText="Paste your Unsplash secret" />
+                        <TextBlock Text="Redirect URI" Foreground="{ThemeResource LabelTextBrush}" Margin="0,10,0,3" />
+                        <TextBox x:Name="RedirectUriBox" PlaceholderText="https://localhost/unsplash" />
+                        <ToggleSwitch x:Name="DarkThemeToggle" Header="Dark theme" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                        <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="104" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Image Source="{Binding ImageUrl}" Width="104" Height="104" Stretch="UniformToFill" IsTapEnabled="True" Tapped="PhotoImage_Tapped" />
-                            <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource PrimaryTextBrush}" TextWrapping="WrapWholeWords" />
-                                <TextBlock Text="{Binding User}" Foreground="{ThemeResource SecondaryTextBrush}" Margin="0,5,0,0" />
-                                <Button Content="Download" Click="DownloadButton_Click" HorizontalAlignment="Left" Margin="0,7,0,0" />
-                            </StackPanel>
+                            <Button x:Name="SaveButton" Content="Save keys" Margin="0,0,4,0" />
+                            <Button x:Name="TestButton" Grid.Column="1" Content="Test API" Margin="4,0" />
+                            <Button x:Name="ClearButton" Grid.Column="2" Content="Clear" Margin="4,0,0,0" />
                         </Grid>
-                    </Border>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-            </ListView>
-        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+        </Pivot>
     </Grid>
 </Page>

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Net.Http;
 using System.Threading.Tasks;
 using UnsplashMobile.Api;
+using Windows.Data.Json;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
@@ -21,8 +23,12 @@ namespace UnsplashMobile
         private const string ClientSecretSettingName = "UnsplashClientSecret";
         private const string RedirectUriSettingName = "UnsplashRedirectUri";
         private const string DarkThemeSettingName = "UnsplashDarkTheme";
+        private const string RecentPhotosFileName = "unsplash-recent.json";
+        private const string SavedPhotosFileName = "unsplash-saved.json";
 
         private readonly UnsplashApiClient _apiClient = new UnsplashApiClient();
+        private readonly ObservableCollection<UnsplashPhoto> _recentPhotos = new ObservableCollection<UnsplashPhoto>();
+        private readonly ObservableCollection<UnsplashPhoto> _savedPhotos = new ObservableCollection<UnsplashPhoto>();
 
         public MainPage()
         {
@@ -44,6 +50,7 @@ namespace UnsplashMobile
         private async void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             StartTurnstileEntrance();
+            await LoadPhotoCollectionsAsync();
             ApplyCredentialsFromInputs();
             StatusText.Text = "Loading featured photos...";
             await SearchAsync("travel");
@@ -90,6 +97,8 @@ namespace UnsplashMobile
                 return;
             }
 
+            await RecordRecentPhotoAsync(photo);
+
             var details = new StackPanel();
             if (Uri.TryCreate(photo.RegularImageUrl, UriKind.Absolute, out var imageUri))
             {
@@ -122,6 +131,169 @@ namespace UnsplashMobile
             };
 
             await dialog.ShowAsync();
+        }
+
+        private async void SavePhoto_Click(object sender, RoutedEventArgs e)
+        {
+            var photo = (sender as Button)?.DataContext as UnsplashPhoto;
+            if (photo == null)
+            {
+                return;
+            }
+
+            if (FindPhoto(_savedPhotos, photo.Id) != null)
+            {
+                StatusText.Text = "Photo is already saved";
+                return;
+            }
+
+            _savedPhotos.Insert(0, photo);
+            await SavePhotoCollectionAsync(SavedPhotosFileName, _savedPhotos);
+            StatusText.Text = "Photo saved to your collection";
+        }
+
+        private async void RemoveSavedPhoto_Click(object sender, RoutedEventArgs e)
+        {
+            var photo = (sender as Button)?.DataContext as UnsplashPhoto;
+            var savedPhoto = photo == null ? null : FindPhoto(_savedPhotos, photo.Id);
+            if (savedPhoto == null)
+            {
+                return;
+            }
+
+            _savedPhotos.Remove(savedPhoto);
+            await SavePhotoCollectionAsync(SavedPhotosFileName, _savedPhotos);
+            StatusText.Text = "Photo removed from saved";
+        }
+
+        private async Task RecordRecentPhotoAsync(UnsplashPhoto photo)
+        {
+            var existingPhoto = FindPhoto(_recentPhotos, photo.Id);
+            if (existingPhoto != null)
+            {
+                _recentPhotos.Remove(existingPhoto);
+            }
+
+            _recentPhotos.Insert(0, photo);
+            while (_recentPhotos.Count > 30)
+            {
+                _recentPhotos.RemoveAt(_recentPhotos.Count - 1);
+            }
+
+            await SavePhotoCollectionAsync(RecentPhotosFileName, _recentPhotos);
+        }
+
+        private async Task LoadPhotoCollectionsAsync()
+        {
+            await LoadPhotoCollectionAsync(RecentPhotosFileName, _recentPhotos);
+            await LoadPhotoCollectionAsync(SavedPhotosFileName, _savedPhotos);
+            RecentPhotoList.ItemsSource = _recentPhotos;
+            SavedPhotoList.ItemsSource = _savedPhotos;
+        }
+
+        private static async Task LoadPhotoCollectionAsync(string fileName, ObservableCollection<UnsplashPhoto> collection)
+        {
+            var item = await ApplicationData.Current.LocalFolder.TryGetItemAsync(fileName);
+            var file = item as StorageFile;
+            if (file == null)
+            {
+                return;
+            }
+
+            var json = await FileIO.ReadTextAsync(file);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return;
+            }
+
+            var array = JsonArray.Parse(json);
+            foreach (var value in array)
+            {
+                collection.Add(PhotoFromJson(value.GetObject()));
+            }
+        }
+
+        private static async Task SavePhotoCollectionAsync(string fileName, IEnumerable<UnsplashPhoto> collection)
+        {
+            var array = new JsonArray();
+            foreach (var photo in collection)
+            {
+                array.Add(PhotoToJson(photo));
+            }
+
+            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
+            await FileIO.WriteTextAsync(file, array.Stringify());
+        }
+
+        private static JsonObject PhotoToJson(UnsplashPhoto photo)
+        {
+            var json = new JsonObject();
+            AddJsonString(json, "Id", photo.Id);
+            AddJsonString(json, "Title", photo.Title);
+            AddJsonString(json, "Description", photo.Description);
+            AddJsonString(json, "AltDescription", photo.AltDescription);
+            AddJsonString(json, "User", photo.User);
+            AddJsonString(json, "UserName", photo.UserName);
+            AddJsonString(json, "UserProfileUrl", photo.UserProfileUrl);
+            AddJsonString(json, "ImageUrl", photo.ImageUrl);
+            AddJsonString(json, "SmallImageUrl", photo.SmallImageUrl);
+            AddJsonString(json, "RegularImageUrl", photo.RegularImageUrl);
+            AddJsonString(json, "FullImageUrl", photo.FullImageUrl);
+            AddJsonString(json, "RawImageUrl", photo.RawImageUrl);
+            AddJsonString(json, "DownloadLocation", photo.DownloadLocation);
+            AddJsonString(json, "PhotoPageUrl", photo.PhotoPageUrl);
+            AddJsonString(json, "CreatedAt", photo.CreatedAt);
+            AddJsonString(json, "Color", photo.Color);
+            AddJsonString(json, "Tags", photo.Tags);
+            json.Add("Width", JsonValue.CreateNumberValue(photo.Width));
+            json.Add("Height", JsonValue.CreateNumberValue(photo.Height));
+            json.Add("Likes", JsonValue.CreateNumberValue(photo.Likes));
+            return json;
+        }
+
+        private static UnsplashPhoto PhotoFromJson(JsonObject json)
+        {
+            return new UnsplashPhoto
+            {
+                Id = json.GetNamedString("Id", string.Empty),
+                Title = json.GetNamedString("Title", "Unsplash photo"),
+                Description = json.GetNamedString("Description", string.Empty),
+                AltDescription = json.GetNamedString("AltDescription", string.Empty),
+                User = json.GetNamedString("User", "Unsplash"),
+                UserName = json.GetNamedString("UserName", string.Empty),
+                UserProfileUrl = json.GetNamedString("UserProfileUrl", string.Empty),
+                ImageUrl = json.GetNamedString("ImageUrl", string.Empty),
+                SmallImageUrl = json.GetNamedString("SmallImageUrl", string.Empty),
+                RegularImageUrl = json.GetNamedString("RegularImageUrl", string.Empty),
+                FullImageUrl = json.GetNamedString("FullImageUrl", string.Empty),
+                RawImageUrl = json.GetNamedString("RawImageUrl", string.Empty),
+                DownloadLocation = json.GetNamedString("DownloadLocation", string.Empty),
+                PhotoPageUrl = json.GetNamedString("PhotoPageUrl", string.Empty),
+                CreatedAt = json.GetNamedString("CreatedAt", string.Empty),
+                Color = json.GetNamedString("Color", string.Empty),
+                Tags = json.GetNamedString("Tags", string.Empty),
+                Width = (int)json.GetNamedNumber("Width", 0),
+                Height = (int)json.GetNamedNumber("Height", 0),
+                Likes = (int)json.GetNamedNumber("Likes", 0)
+            };
+        }
+
+        private static void AddJsonString(JsonObject json, string name, string value)
+        {
+            json.Add(name, JsonValue.CreateStringValue(value ?? string.Empty));
+        }
+
+        private static UnsplashPhoto FindPhoto(IEnumerable<UnsplashPhoto> photos, string photoId)
+        {
+            foreach (var photo in photos)
+            {
+                if (string.Equals(photo.Id, photoId, StringComparison.Ordinal))
+                {
+                    return photo;
+                }
+            }
+
+            return null;
         }
 
         private static void AddPhotoDetail(Panel panel, string label, string value)
