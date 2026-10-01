@@ -7,11 +7,6 @@ namespace UnsplashMobile
 {
     sealed partial class App : Application
     {
-        public static void Main(string[] args)
-        {
-            global::Windows.UI.Xaml.Application.Start((p) => new App());
-        }
-
         public App()
         {
             InitializeComponent();

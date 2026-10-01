@@ -1,0 +1,19 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# MSBuild and UWP outputs
+**/bin/
+**/obj/
+**/AppPackages/
+**/TestResults/
+*.appx
+*.appxbundle
+*.appxupload
+*.appxsym
+*.msix
+*.msixbundle
+*.msixupload
+*.pfx
+*_Dev.cer
