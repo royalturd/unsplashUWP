@@ -1,12 +1,33 @@
 <Application
     x:Class="UnsplashMobile.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    RequestedTheme="Light">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <SolidColorBrush x:Key="BrandBrush" Color="#E85D3F" />
-            <SolidColorBrush x:Key="InkBrush" Color="#202020" />
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F3F6F4" />
+                    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#18352F" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#65756F" />
+                    <SolidColorBrush x:Key="LabelTextBrush" Color="#42534D" />
+                    <SolidColorBrush x:Key="BorderBrush" Color="#D9E2DD" />
+                    <SolidColorBrush x:Key="HeaderBrush" Color="#153D36" />
+                    <SolidColorBrush x:Key="AccentBrush" Color="#F07A60" />
+                    <SolidColorBrush x:Key="HeaderStatusBrush" Color="#D4E4DE" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#121816" />
+                    <SolidColorBrush x:Key="SurfaceBrush" Color="#202B26" />
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#E7F0EB" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A5B4AE" />
+                    <SolidColorBrush x:Key="LabelTextBrush" Color="#C1CEC8" />
+                    <SolidColorBrush x:Key="BorderBrush" Color="#3A4942" />
+                    <SolidColorBrush x:Key="HeaderBrush" Color="#0B2924" />
+                    <SolidColorBrush x:Key="AccentBrush" Color="#FF9679" />
+                    <SolidColorBrush x:Key="HeaderStatusBrush" Color="#C7D9D1" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

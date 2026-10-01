@@ -14,6 +14,11 @@ namespace UnsplashMobile.Api
         public string Title { get; set; }
         public string User { get; set; }
         public string ImageUrl { get; set; }
+        public string SmallImageUrl { get; set; }
+        public string RegularImageUrl { get; set; }
+        public string FullImageUrl { get; set; }
+        public string RawImageUrl { get; set; }
+        public string DownloadLocation { get; set; }
     }
 
     public sealed class UnsplashApiClient
@@ -85,17 +90,57 @@ namespace UnsplashMobile.Api
                     var photoObject = item.GetObject();
                     var urls = photoObject.GetNamedObject("urls");
                     var user = photoObject.GetNamedObject("user");
+                    var links = photoObject.GetNamedObject("links");
+                    var smallUrl = urls.GetNamedString("small", string.Empty);
+                    var regularUrl = urls.GetNamedString("regular", smallUrl);
+                    var fullUrl = urls.GetNamedString("full", regularUrl);
 
                     photos.Add(new UnsplashPhoto
                     {
                         Id = photoObject.GetNamedString("id", string.Empty),
                         Title = photoObject.GetNamedString("alt_description", "Unsplash photo"),
                         User = user.GetNamedString("name", "Unsplash"),
-                        ImageUrl = urls.GetNamedString("small", urls.GetNamedString("regular", string.Empty))
+                        ImageUrl = smallUrl,
+                        SmallImageUrl = smallUrl,
+                        RegularImageUrl = regularUrl,
+                        FullImageUrl = fullUrl,
+                        RawImageUrl = urls.GetNamedString("raw", fullUrl),
+                        DownloadLocation = links.GetNamedString("download_location", string.Empty)
                     });
                 }
 
                 return photos;
+            }
+        }
+
+        public Task<byte[]> DownloadImageAsync(string imageUrl)
+        {
+            if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) || !string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("The selected image URL is invalid.");
+            }
+
+            return _httpClient.GetByteArrayAsync(uri);
+        }
+
+        public async Task RegisterDownloadAsync(UnsplashPhoto photo)
+        {
+            if (photo == null || !Uri.TryCreate(photo.DownloadLocation, UriKind.Absolute, out var uri) || !string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Unsplash did not provide a valid download link for this photo.");
+            }
+
+            using (var request = new HttpRequestMessage(HttpMethod.Get, uri))
+            {
+                request.Headers.Add("Accept-Version", "v1");
+                request.Headers.Add("Authorization", IsAuthenticated ? $"Bearer {AccessToken}" : $"Client-ID {ClientId}");
+
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException("Unsplash download registration failed: " + body);
+                }
             }
         }
 

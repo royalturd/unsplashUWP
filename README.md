@@ -1,12 +1,14 @@
 # Unsplash Mobile
 
-A native UWP Unsplash client for Windows 10 Mobile. The app searches Unsplash photos and supports OAuth login without embedding a browser engine or depending on Gecko.
+A native UWP Unsplash client for Windows 10 Mobile, created by Royalturd. The app searches Unsplash photos and supports OAuth login without embedding a browser engine or depending on Gecko.
 
 ## Features
 
 - Search and view Unsplash photos.
+- Download small, regular, full-resolution, or original photo images to a location you choose.
 - Enter an Unsplash Access Key, Secret Key, and redirect URI in the app.
 - Save, test, or clear credentials on the device.
+- Toggle dark theme in Settings; the choice is remembered on the device.
 - Sign in through the system web authentication flow.
 
 ## Requirements
@@ -23,7 +25,9 @@ The package declares `10.0.15063.0` as its minimum OS version. The project compi
 1. Open `UnsplashMobile-WebView-Prototype/UnsplashMobile.csproj` in Visual Studio.
 2. Launch the app on an ARM device or emulator.
 3. Enter the Unsplash Access Key, Secret Key, and registered redirect URI, then select **Save**.
-4. Select **Test** to check API access, **Login** for OAuth, or enter a search term and select **Search**.
+4. Use the **Dark theme** switch to change and save the app appearance.
+5. Select **Test** to check API access, **Sign in** for OAuth, or enter a search term and select **Search**.
+6. Select **Download** on a photo, choose an image size, then pick a save location.
 
 Credentials are saved in the app's local settings on the device. Do not share a package containing real credentials or commit API keys.
 
