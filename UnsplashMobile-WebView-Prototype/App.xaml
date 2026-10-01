@@ -17,15 +17,15 @@
                     <SolidColorBrush x:Key="HeaderStatusBrush" Color="#D4E4DE" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#121816" />
-                    <SolidColorBrush x:Key="SurfaceBrush" Color="#202B26" />
-                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#E7F0EB" />
-                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A5B4AE" />
-                    <SolidColorBrush x:Key="LabelTextBrush" Color="#C1CEC8" />
-                    <SolidColorBrush x:Key="BorderBrush" Color="#3A4942" />
-                    <SolidColorBrush x:Key="HeaderBrush" Color="#0B2924" />
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="SurfaceBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F2F2F2" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A8A8A8" />
+                    <SolidColorBrush x:Key="LabelTextBrush" Color="#D0D0D0" />
+                    <SolidColorBrush x:Key="BorderBrush" Color="#292929" />
+                    <SolidColorBrush x:Key="HeaderBrush" Color="#000000" />
                     <SolidColorBrush x:Key="AccentBrush" Color="#FF9679" />
-                    <SolidColorBrush x:Key="HeaderStatusBrush" Color="#C7D9D1" />
+                    <SolidColorBrush x:Key="HeaderStatusBrush" Color="#D0D0D0" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
