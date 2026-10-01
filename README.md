@@ -5,6 +5,7 @@ A native UWP Unsplash client for Windows 10 Mobile, created by Royalturd. The ap
 ## Features
 
 - Search and view Unsplash photos.
+- Load additional search results in pages.
 - Download small, regular, full-resolution, or original photo images to a location you choose.
 - Open a photo's full description, photographer, dimensions, tags, and source links by tapping its image.
 - Browse Discover, Recent, and Saved as separate swipeable sections.

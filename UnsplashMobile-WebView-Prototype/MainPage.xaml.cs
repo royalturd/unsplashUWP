@@ -25,14 +25,21 @@ namespace UnsplashMobile
         private const string DarkThemeSettingName = "UnsplashDarkTheme";
         private const string RecentPhotosFileName = "unsplash-recent.json";
         private const string SavedPhotosFileName = "unsplash-saved.json";
+        private const int SearchPageSize = 10;
 
         private readonly UnsplashApiClient _apiClient = new UnsplashApiClient();
         private readonly ObservableCollection<UnsplashPhoto> _recentPhotos = new ObservableCollection<UnsplashPhoto>();
         private readonly ObservableCollection<UnsplashPhoto> _savedPhotos = new ObservableCollection<UnsplashPhoto>();
+        private readonly ObservableCollection<UnsplashPhoto> _searchResults = new ObservableCollection<UnsplashPhoto>();
+        private string _activeSearchQuery = "travel";
+        private int _currentSearchPage;
+        private bool _hasMoreSearchResults;
+        private bool _isSearchInProgress;
 
         public MainPage()
         {
             InitializeComponent();
+            PhotoList.ItemsSource = _searchResults;
             LoadSavedCredentials();
             var settings = ApplicationData.Current.LocalSettings;
             DarkThemeToggle.IsOn = settings.Values[DarkThemeSettingName] is bool && (bool)settings.Values[DarkThemeSettingName];
@@ -40,6 +47,7 @@ namespace UnsplashMobile
             DarkThemeToggle.Toggled += DarkThemeToggle_Toggled;
             Loaded += MainPage_Loaded;
             SearchButton.Click += SearchButton_Click;
+            LoadMoreButton.Click += LoadMoreButton_Click;
             LoginButton.Click += LoginButton_Click;
             SaveButton.Click += SaveButton_Click;
             TestButton.Click += TestButton_Click;
@@ -323,6 +331,11 @@ namespace UnsplashMobile
             await SearchAsync(SearchBox.Text);
         }
 
+        private async void LoadMoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            await SearchAsync(_activeSearchQuery, true);
+        }
+
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -490,22 +503,83 @@ namespace UnsplashMobile
             }
         }
 
-        private async Task SearchAsync(string query)
+        private async Task SearchAsync(string query, bool loadMore = false)
         {
+            if (_isSearchInProgress || (loadMore && !_hasMoreSearchResults))
+            {
+                return;
+            }
+
+            if (!loadMore)
+            {
+                _activeSearchQuery = string.IsNullOrWhiteSpace(query) ? "travel" : query.Trim();
+                _currentSearchPage = 0;
+                _hasMoreSearchResults = true;
+                _searchResults.Clear();
+                LoadMoreButton.Visibility = Visibility.Collapsed;
+            }
+
+            _isSearchInProgress = true;
+            SearchButton.IsEnabled = false;
+            LoadMoreButton.IsEnabled = false;
+
             try
             {
                 ApplyCredentialsFromInputs();
-                var searchText = string.IsNullOrWhiteSpace(query) ? "travel" : query.Trim();
-                StatusText.Text = "Loading photos...";
-                var photos = await _apiClient.SearchPhotosAsync(searchText);
-                PhotoList.ItemsSource = photos;
-                StatusText.Text = photos.Count > 0 ? "Loaded " + photos.Count + " photos" : "No matching photos found";
+                var requestedPage = _currentSearchPage + 1;
+                StatusText.Text = loadMore ? "Loading more photos..." : "Loading photos...";
+                var photos = await _apiClient.SearchPhotosAsync(_activeSearchQuery, requestedPage);
+                foreach (var photo in photos)
+                {
+                    if (!ContainsSearchPhoto(photo.Id))
+                    {
+                        _searchResults.Add(photo);
+                    }
+                }
+
+                _currentSearchPage = requestedPage;
+                _hasMoreSearchResults = photos.Count >= SearchPageSize;
+                LoadMoreButton.Visibility = _hasMoreSearchResults ? Visibility.Visible : Visibility.Collapsed;
+
+                if (photos.Count == 0 && requestedPage > 1)
+                {
+                    StatusText.Text = "No more photos";
+                }
+                else if (_searchResults.Count == 0)
+                {
+                    StatusText.Text = "No matching photos found";
+                }
+                else
+                {
+                    StatusText.Text = _hasMoreSearchResults
+                        ? "Showing " + _searchResults.Count + " photos"
+                        : "Loaded all " + _searchResults.Count + " photos";
+                }
             }
             catch (Exception ex)
             {
                 StatusText.Text = "API error: " + ex.Message;
                 ShowMessageDialog("Unsplash API error", ex.Message);
             }
+            finally
+            {
+                _isSearchInProgress = false;
+                SearchButton.IsEnabled = true;
+                LoadMoreButton.IsEnabled = _hasMoreSearchResults;
+            }
+        }
+
+        private bool ContainsSearchPhoto(string photoId)
+        {
+            foreach (var photo in _searchResults)
+            {
+                if (string.Equals(photo.Id, photoId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async void ShowMessageDialog(string title, string content)
