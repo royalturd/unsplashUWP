@@ -172,6 +172,59 @@ namespace UnsplashMobile.Api
             }
         }
 
+        public async Task<UnsplashPhoto> GetDailyFeaturedPhotoAsync(string topic = null)
+        {
+            var topicQuery = string.IsNullOrWhiteSpace(topic) ? string.Empty : "&query=" + Uri.EscapeDataString(topic.Trim());
+            var uri = new Uri("https://api.unsplash.com/photos/random?orientation=landscape&content_filter=high" + topicQuery);
+            using (var request = new HttpRequestMessage(HttpMethod.Get, uri))
+            {
+                request.Headers.Add("Accept-Version", "v1");
+                request.Headers.Add("Authorization", IsAuthenticated ? $"Bearer {AccessToken}" : $"Client-ID {ClientId}");
+
+                var response = await _httpClient.SendAsync(request);
+                var body = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException("Unsplash featured photo request failed: " + body);
+                }
+
+                JsonObject photoObject;
+                try
+                {
+                    photoObject = JsonValue.Parse(body).GetObject();
+                }
+                catch (Exception ex)
+                {
+                    throw new HttpRequestException("Unsplash returned invalid featured photo JSON: " + body, ex);
+                }
+
+                var urls = GetObjectOrEmpty(photoObject, "urls");
+                var user = GetObjectOrEmpty(photoObject, "user");
+                var links = GetObjectOrEmpty(photoObject, "links");
+                var smallUrl = GetStringOrDefault(urls, "small", string.Empty);
+                var regularUrl = GetStringOrDefault(urls, "regular", smallUrl);
+                var fullUrl = GetStringOrDefault(urls, "full", regularUrl);
+                var altDescription = GetStringOrDefault(photoObject, "alt_description", string.Empty);
+
+                return new UnsplashPhoto
+                {
+                    Id = GetStringOrDefault(photoObject, "id", string.Empty),
+                    Title = string.IsNullOrWhiteSpace(altDescription) ? "Today's featured photo" : altDescription,
+                    Description = GetStringOrDefault(photoObject, "description", string.Empty),
+                    AltDescription = altDescription,
+                    User = GetStringOrDefault(user, "name", "Unsplash photographer"),
+                    UserName = GetStringOrDefault(user, "username", string.Empty),
+                    ImageUrl = smallUrl,
+                    SmallImageUrl = smallUrl,
+                    RegularImageUrl = regularUrl,
+                    FullImageUrl = fullUrl,
+                    RawImageUrl = GetStringOrDefault(urls, "raw", fullUrl),
+                    DownloadLocation = GetStringOrDefault(links, "download_location", string.Empty),
+                    PhotoPageUrl = GetStringOrDefault(links, "html", string.Empty)
+                };
+            }
+        }
+
         private static JsonObject GetObjectOrEmpty(JsonObject parent, string name)
         {
             return parent.ContainsKey(name) && parent[name].ValueType == JsonValueType.Object

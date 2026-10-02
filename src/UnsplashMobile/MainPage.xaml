@@ -43,6 +43,25 @@
                     </Grid>
                 </Border>
             </DataTemplate>
+            <DataTemplate x:Key="PhotoGridTemplate">
+                <Border Width="140" Background="{ThemeResource SurfaceBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" Padding="6" Margin="0,0,6,8" CornerRadius="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="88" />
+                            <RowDefinition Height="40" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Image Source="{Binding ImageUrl}" Stretch="UniformToFill" IsTapEnabled="True" Tapped="PhotoImage_Tapped" />
+                        <TextBlock Grid.Row="1" Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource PrimaryTextBrush}" TextWrapping="WrapWholeWords" />
+                        <TextBlock Grid.Row="2" Text="{Binding User}" FontSize="12" Foreground="{ThemeResource SecondaryTextBrush}" Margin="0,3,0,3" TextTrimming="CharacterEllipsis" />
+                        <StackPanel Grid.Row="3" Orientation="Horizontal">
+                            <Button Content="Save" Click="SavePhoto_Click" Margin="0,0,4,0" Padding="6,3" />
+                            <Button Content="Download" Click="DownloadButton_Click" Padding="6,3" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
     <Grid x:Name="PageRoot" Padding="12">
@@ -52,16 +71,28 @@
         </Grid.RowDefinitions>
 
         <Border Background="{ThemeResource HeaderBrush}" Padding="14" CornerRadius="4">
-            <StackPanel>
-                <TextBlock Text="UnsplashUWP" FontSize="30" FontWeight="SemiBold" Foreground="White" />
-                <TextBlock x:Name="StatusText" Text="Ready to connect" Foreground="{ThemeResource HeaderStatusBrush}" FontSize="12" Margin="0,3,0,0" />
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Width="32" Height="32" VerticalAlignment="Center">
+                    <Image.Source>
+                        <SvgImageSource UriSource="ms-appx:///Assets/UnsplashLogo.svg" />
+                    </Image.Source>
+                </Image>
+                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="UnsplashUWP" FontSize="30" FontWeight="SemiBold" Foreground="White" />
+                    <TextBlock x:Name="StatusText" Text="Ready to connect" Foreground="{ThemeResource HeaderStatusBrush}" FontSize="12" Margin="0,3,0,0" />
+                </StackPanel>
+            </Grid>
         </Border>
 
         <Pivot x:Name="LibraryPivot" Grid.Row="1" Margin="0,6,0,0">
             <PivotItem Header="Discover">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -76,8 +107,13 @@
                         <Button x:Name="LoginButton" Content="Sign in" Margin="0,0,4,0" />
                         <Button x:Name="SearchButton" Grid.Column="1" Content="Search" Margin="4,0,0,0" />
                     </Grid>
-                    <ListView x:Name="PhotoList" Grid.Row="2" Margin="0,10,0,0" ItemTemplate="{StaticResource PhotoCardTemplate}" />
-                    <Button x:Name="LoadMoreButton" Grid.Row="3" Content="Load more photos" Visibility="Collapsed" IsEnabled="False" Margin="0,8,0,0" Click="LoadMoreButton_Click" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+                        <RadioButton x:Name="ListLayoutRadio" GroupName="PhotoLayout" Content="List" IsChecked="True" Tag="list" />
+                        <RadioButton x:Name="GridLayoutRadio" GroupName="PhotoLayout" Content="Grid" Tag="grid" Margin="12,0,0,0" />
+                    </StackPanel>
+                    <ListView x:Name="PhotoList" Grid.Row="3" Margin="0,8,0,0" ItemTemplate="{StaticResource PhotoCardTemplate}" />
+                    <GridView x:Name="PhotoGridList" Grid.Row="3" Margin="0,8,0,0" ItemTemplate="{StaticResource PhotoGridTemplate}" Visibility="Collapsed" />
+                    <Button x:Name="LoadMoreButton" Grid.Row="4" Content="Load more photos" Visibility="Collapsed" IsEnabled="False" Margin="0,8,0,0" Click="LoadMoreButton_Click" />
                 </Grid>
             </PivotItem>
             <PivotItem Header="Recent">
@@ -98,6 +134,16 @@
                         <TextBlock Text="Redirect URI" Foreground="{ThemeResource LabelTextBrush}" Margin="0,10,0,3" />
                         <TextBox x:Name="RedirectUriBox" PlaceholderText="https://localhost/unsplash" />
                         <ToggleSwitch x:Name="DarkThemeToggle" Header="Dark theme" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                        <TextBlock Text="Live tile" FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource PrimaryTextBrush}" Margin="0,16,0,4" />
+                        <ToggleSwitch x:Name="DailyTileEnabledToggle" Header="Show daily image" IsOn="True" HorizontalAlignment="Left" />
+                        <TextBlock Text="Daily image topic" Foreground="{ThemeResource LabelTextBrush}" Margin="0,8,0,3" />
+                        <ComboBox x:Name="TileTopicPicker" HorizontalAlignment="Stretch" SelectedIndex="0">
+                            <ComboBoxItem Content="Featured" Tag="" />
+                            <ComboBoxItem Content="Nature" Tag="nature" />
+                            <ComboBoxItem Content="Travel" Tag="travel" />
+                            <ComboBoxItem Content="Architecture" Tag="architecture" />
+                            <ComboBoxItem Content="Portraits" Tag="portrait" />
+                        </ComboBox>
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

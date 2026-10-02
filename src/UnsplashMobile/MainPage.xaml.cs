@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using UnsplashMobile.Api;
 using Windows.Data.Json;
+using Windows.Data.Xml.Dom;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
@@ -14,6 +16,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Animation;
 using Windows.UI.Xaml.Media.Imaging;
+using Windows.UI.Notifications;
 
 namespace UnsplashMobile
 {
@@ -25,6 +28,9 @@ namespace UnsplashMobile
         private const string DarkThemeSettingName = "UnsplashDarkTheme";
         private const string RecentPhotosFileName = "unsplash-recent.json";
         private const string SavedPhotosFileName = "unsplash-saved.json";
+        private const string DailyTileDateSettingName = "UnsplashDailyTileDate";
+        private const string DailyTileTopicSettingName = "UnsplashDailyTileTopic";
+        private const string DailyTileEnabledSettingName = "UnsplashDailyTileEnabled";
         private const int SearchPageSize = 10;
 
         private readonly UnsplashApiClient _apiClient = new UnsplashApiClient();
@@ -35,16 +41,25 @@ namespace UnsplashMobile
         private int _currentSearchPage;
         private bool _hasMoreSearchResults;
         private bool _isSearchInProgress;
+        private bool _isUpdatingDailyTile;
+        private DispatcherTimer _dailyTileTimer;
 
         public MainPage()
         {
             InitializeComponent();
             PhotoList.ItemsSource = _searchResults;
+            PhotoGridList.ItemsSource = _searchResults;
+            ListLayoutRadio.Checked += PhotoLayoutRadio_Checked;
+            GridLayoutRadio.Checked += PhotoLayoutRadio_Checked;
             LoadSavedCredentials();
             var settings = ApplicationData.Current.LocalSettings;
             DarkThemeToggle.IsOn = settings.Values[DarkThemeSettingName] is bool && (bool)settings.Values[DarkThemeSettingName];
             ApplyTheme(DarkThemeToggle.IsOn);
             DarkThemeToggle.Toggled += DarkThemeToggle_Toggled;
+            DailyTileEnabledToggle.IsOn = !(settings.Values[DailyTileEnabledSettingName] is bool) || (bool)settings.Values[DailyTileEnabledSettingName];
+            SetTileTopic(settings.Values[DailyTileTopicSettingName] as string ?? string.Empty);
+            DailyTileEnabledToggle.Toggled += DailyTileEnabledToggle_Toggled;
+            TileTopicPicker.SelectionChanged += TileTopicPicker_SelectionChanged;
             Loaded += MainPage_Loaded;
             SearchButton.Click += SearchButton_Click;
             LoadMoreButton.Click += LoadMoreButton_Click;
@@ -60,8 +75,147 @@ namespace UnsplashMobile
             StartTurnstileEntrance();
             await LoadPhotoCollectionsAsync();
             ApplyCredentialsFromInputs();
+            StartDailyTileRefreshTimer();
+            var tileRefreshTask = UpdateDailyTileAsync();
             StatusText.Text = "Loading featured photos...";
             await SearchAsync("travel");
+            await tileRefreshTask;
+        }
+
+        private void StartDailyTileRefreshTimer()
+        {
+            if (!DailyTileEnabledToggle.IsOn || _dailyTileTimer != null)
+            {
+                return;
+            }
+
+            _dailyTileTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+            _dailyTileTimer.Tick += async (sender, args) => await UpdateDailyTileAsync();
+            _dailyTileTimer.Start();
+        }
+
+        private async Task UpdateDailyTileAsync()
+        {
+            if (_isUpdatingDailyTile)
+            {
+                return;
+            }
+
+            _isUpdatingDailyTile = true;
+            try
+            {
+                var today = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var settings = ApplicationData.Current.LocalSettings;
+                if (!DailyTileEnabledToggle.IsOn)
+                {
+                    TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+                    return;
+                }
+
+                var topic = GetSelectedTileTopic();
+                var topicSuffix = string.IsNullOrWhiteSpace(topic) ? "featured" : topic.ToLowerInvariant();
+                var fileName = "unsplash-tile-" + today + "-" + topicSuffix + ".jpg";
+                if (string.Equals(settings.Values[DailyTileDateSettingName] as string, today, StringComparison.Ordinal) &&
+                    string.Equals(settings.Values[DailyTileTopicSettingName] as string ?? string.Empty, topic, StringComparison.Ordinal))
+                {
+                    var currentFile = await ApplicationData.Current.LocalFolder.TryGetItemAsync(fileName);
+                    if (currentFile is StorageFile)
+                    {
+                        return;
+                    }
+                }
+
+                var featuredPhoto = await _apiClient.GetDailyFeaturedPhotoAsync(topic);
+                var imageUrl = string.IsNullOrWhiteSpace(featuredPhoto.FullImageUrl)
+                    ? featuredPhoto.RegularImageUrl
+                    : featuredPhoto.FullImageUrl;
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    throw new InvalidOperationException("Unsplash did not provide an image for today's tile.");
+                }
+
+                var imageBytes = await _apiClient.DownloadImageAsync(imageUrl);
+                var imageFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
+                await FileIO.WriteBytesAsync(imageFile, imageBytes);
+
+                var imageSource = "ms-appdata:///local/" + fileName;
+                var tileXml = "<tile><visual version=\"2\">" +
+                    "<binding template=\"TileSmall\" branding=\"none\"><image src=\"" + imageSource + "\" /></binding>" +
+                    "<binding template=\"TileMedium\" branding=\"none\"><image src=\"" + imageSource + "\" placement=\"background\" /><text placement=\"overlay\">UnsplashUWP</text></binding>" +
+                    "<binding template=\"TileWide\" branding=\"none\"><image src=\"" + imageSource + "\" placement=\"background\" /><text placement=\"overlay\">Today's featured photo</text></binding>" +
+                    "</visual></tile>";
+                var document = new XmlDocument();
+                document.LoadXml(tileXml);
+                TileUpdateManager.CreateTileUpdaterForApplication().Update(new TileNotification(document));
+                settings.Values[DailyTileDateSettingName] = today;
+                settings.Values[DailyTileTopicSettingName] = topic;
+
+                var cachedFiles = await ApplicationData.Current.LocalFolder.GetFilesAsync();
+                foreach (var cachedFile in cachedFiles)
+                {
+                    if (cachedFile.Name.StartsWith("unsplash-tile-", StringComparison.Ordinal) && cachedFile.Name != fileName)
+                    {
+                        await cachedFile.DeleteAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = "Daily tile update unavailable: " + ex.Message;
+            }
+            finally
+            {
+                _isUpdatingDailyTile = false;
+            }
+        }
+
+        private void DailyTileEnabledToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            settings.Values[DailyTileEnabledSettingName] = DailyTileEnabledToggle.IsOn;
+            if (DailyTileEnabledToggle.IsOn)
+            {
+                settings.Values.Remove(DailyTileDateSettingName);
+                StartDailyTileRefreshTimer();
+                _ = UpdateDailyTileAsync();
+            }
+            else
+            {
+                _dailyTileTimer?.Stop();
+                _dailyTileTimer = null;
+                TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+            }
+        }
+
+        private void TileTopicPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            settings.Values[DailyTileTopicSettingName] = GetSelectedTileTopic();
+            settings.Values.Remove(DailyTileDateSettingName);
+            if (DailyTileEnabledToggle.IsOn)
+            {
+                _ = UpdateDailyTileAsync();
+            }
+        }
+
+        private string GetSelectedTileTopic()
+        {
+            return (TileTopicPicker.SelectedItem as ComboBoxItem)?.Tag as string ?? string.Empty;
+        }
+
+        private void SetTileTopic(string topic)
+        {
+            foreach (var item in TileTopicPicker.Items)
+            {
+                var option = item as ComboBoxItem;
+                if (option != null && string.Equals(option.Tag as string ?? string.Empty, topic, StringComparison.Ordinal))
+                {
+                    TileTopicPicker.SelectedItem = option;
+                    return;
+                }
+            }
+
+            TileTopicPicker.SelectedIndex = 0;
         }
 
         private void StartTurnstileEntrance()
@@ -329,6 +483,14 @@ namespace UnsplashMobile
         {
             ApplyCredentialsFromInputs();
             await SearchAsync(SearchBox.Text);
+        }
+
+        private void PhotoLayoutRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            var selectedLayout = (sender as RadioButton)?.Tag as string;
+            var showGrid = string.Equals(selectedLayout, "grid", StringComparison.Ordinal);
+            PhotoGridList.Visibility = showGrid ? Visibility.Visible : Visibility.Collapsed;
+            PhotoList.Visibility = showGrid ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private async void LoadMoreButton_Click(object sender, RoutedEventArgs e)
