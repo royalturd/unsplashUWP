@@ -1,16 +1,19 @@
 # UnsplashUWP
 
-UnsplashUWP is a native Universal Windows Platform client for Windows 10 Mobile, developed for Lumia by Royalturd. It searches Unsplash directly through its API and OAuth flow; it does not embed a browser engine or depend on Gecko.
+UnsplashUWP is a native Universal Windows Platform client for Windows 10 Mobile, developed for Lumia by Royalturd. It searches Unsplash directly through its API and OAuth flow
 
 ## Features
 
 - Search Unsplash and load additional results with **Load more**.
+- Switch fetched photos between **List** and **Grid** layouts without restarting the search.
 - Tap a photo to view its descriptions, photographer, dimensions, tags, likes, and source links.
 - Save photos and review recently viewed photos in separate swipeable sections. Both collections persist on the device.
 - Download a photo as a small, regular, full-resolution, or original image, then choose where to save it.
+- Enable or clear the Windows Start live tile and choose a daily image topic: Featured, Nature, Travel, Architecture, or Portraits.
+- Use the Unsplash mark for the app header, tile icons, and splash screen.
 - Sign in with Unsplash OAuth and enter, test, save, or clear API credentials in the app.
-- Toggle the AMOLED-black dark theme in Settings; the selection is remembered.
-- View the **UnsplashUWP Beta** label and Lumia developer credit in Settings.
+- Toggle dark theme in Settings; the selection is remembered.
+
 
 ## Requirements
 
@@ -20,6 +23,17 @@ UnsplashUWP is a native Universal Windows Platform client for Windows 10 Mobile,
 - A Windows 10 Mobile ARM device running build 15063 or later for deployment.
 
 The package minimum OS version is `10.0.15063.0`. The project builds with SDK `10.0.19041.0`; the build SDK version does not raise the package minimum. The 15063 SDK reference assemblies are not included in this repository.
+
+## Create Unsplash API Credentials
+
+1. Sign in to [Unsplash Developer Applications](https://unsplash.com/oauth/applications) and create a new application.
+2. Review and accept the Unsplash API terms, then provide the application name, description, and website requested by Unsplash.
+3. Add `https://localhost/unsplash` as an authorized redirect URI. It must match the Redirect URI entered in the app.
+4. Grant the permissions requested by this app: `public`, `read_user`, and `write_likes`.
+5. Open the new application's details and copy its **Access Key** and **Secret Key**.
+6. In UnsplashUWP, open **Settings**, enter both keys and the same redirect URI, then select **Save keys**. Select **Test API** to verify access; select **Sign in** to complete OAuth authorization.
+
+Keep the Secret Key private. Enter credentials directly in the app; do not add them to source files, README content, or Git commits. The app stores the values in its local application settings on the device.
 
 ## Configure And Use
 
