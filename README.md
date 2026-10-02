@@ -23,7 +23,7 @@ The package minimum OS version is `10.0.15063.0`. The project builds with SDK `1
 
 ## Configure And Use
 
-1. Open `UnsplashMobile-WebView-Prototype/UnsplashMobile.csproj` in Visual Studio.
+1. Open `src/UnsplashMobile/UnsplashMobile.csproj` in Visual Studio.
 2. Deploy to an ARM device or emulator.
 3. In **Settings**, enter the Unsplash Access Key, Secret Key, and registered Redirect URI, then select **Save keys**.
 4. Use **Test API** to verify access or **Sign in** to authorize through OAuth.
@@ -38,7 +38,7 @@ From PowerShell at the repository root, build a sideload package into `D:\Unspla
 
 ```powershell
 $msbuild = 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe'
-& $msbuild '.\UnsplashMobile-WebView-Prototype\UnsplashMobile.csproj' `
+& $msbuild '.\src\UnsplashMobile\UnsplashMobile.csproj' `
   /restore `
   /p:Configuration=Debug `
   /p:Platform=ARM `
