@@ -71,21 +71,10 @@
         </Grid.RowDefinitions>
 
         <Border Background="{ThemeResource HeaderBrush}" Padding="14" CornerRadius="4">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="40" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Image Width="32" Height="32" VerticalAlignment="Center">
-                    <Image.Source>
-                        <SvgImageSource UriSource="ms-appx:///Assets/UnsplashLogo.svg" />
-                    </Image.Source>
-                </Image>
-                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="UnsplashUWP" FontSize="30" FontWeight="SemiBold" Foreground="White" />
-                    <TextBlock x:Name="StatusText" Text="Ready to connect" Foreground="{ThemeResource HeaderStatusBrush}" FontSize="12" Margin="0,3,0,0" />
-                </StackPanel>
-            </Grid>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="UnsplashUWP" FontSize="30" FontWeight="SemiBold" Foreground="White" />
+                <TextBlock x:Name="StatusText" Text="Ready to connect" Foreground="{ThemeResource HeaderStatusBrush}" FontSize="12" Margin="0,3,0,0" />
+            </StackPanel>
         </Border>
 
         <Pivot x:Name="LibraryPivot" Grid.Row="1" Margin="0,6,0,0">
